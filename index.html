@@ -2,34 +2,73 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#4f46e5" />
   <title>题境 | 本地题库系统</title>
+  
+  <!-- 移动端性能优化 -->
+  <link rel="preconnect" href="https://cdn.staticfile.org" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <!-- DNS 预解析 -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://cdn.staticfile.org">
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  
+  <!-- 资源预加载 -->
+  <link rel="preload" href="https://cdn.staticfile.org/tailwindcss/2.2.19/tailwind.min.css" as="style">
+  <link rel="preload" href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css" as="style">
   <!-- Tailwind CSS -->
   <link href="https://cdn.staticfile.org/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
   <!-- Font Awesome -->
   <link href="https://cdn.staticfile.org/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <!-- Noto Serif SC & Noto Sans SC -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <!-- SheetJS for xlsx parsing -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- 本地 SheetJS 备份，避免网络问题 -->
+  <!-- 移动端懒加载脚本 -->
   <script>
-    // 检查 XLSX 是否已加载，如果没有则加载本地版本
-    window.addEventListener('DOMContentLoaded', function() {
-      if (typeof XLSX === 'undefined') {
-        console.log('CDN加载失败，使用本地XLSX库');
+    // 移动端性能优化：延迟加载非关键脚本
+    function loadScript(src, fallback, id) {
+      return new Promise((resolve, reject) => {
+        if (document.getElementById(id)) {
+          resolve();
+          return;
+        }
+        
         const script = document.createElement('script');
-        script.src = './xlsx.full.min.js'; // 本地备份
+        script.id = id;
+        script.src = src;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = () => {
+          if (fallback) {
+            const fallbackScript = document.createElement('script');
+            fallbackScript.src = fallback;
+            fallbackScript.onload = resolve;
+            fallbackScript.onerror = reject;
+            document.head.appendChild(fallbackScript);
+          } else {
+            reject();
+          }
+        };
         document.head.appendChild(script);
-      } else {
-        console.log('CDN加载成功');
-      }
+      });
+    }
+    
+    // 核心脚本立即加载
+    loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js', './xlsx.full.min.js', 'xlsx-script');
+    
+    // 延迟加载非关键脚本
+    window.addEventListener('load', function() {
+      setTimeout(() => {
+        loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js', './src/marked.min.js', 'marked-script');
+        loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js', null, 'chart-script');
+      }, 1000);
     });
   </script>
-  <!-- Marked.js for Markdown rendering -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <!-- Chart.js for statistics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <!-- 光影书架艺术级视觉升级CSS（自动生成，2024） -->
   <style>
     body {
@@ -632,16 +671,16 @@
     }
     .dark #tab-wrong .question-item,
     .dark #tab-fav .question-item {
-      background: rgba(255, 255, 255, 0.04) !important;
+      background: rgba(255,255,255,0.04) !important;
       color:#d1d5db !important;
     }
     .dark #tab-wrong .clear-btn,
     .dark #tab-wrong .remove-btn,
     .dark #tab-fav .clear-btn,
     .dark #tab-fav .remove-btn {
-      background: rgba(255, 255, 255, 0.06) !important;
+      background: rgba(255,255,255,0.06) !important;
       color:#d1d5db !important;
-      border-color: rgba(255, 255, 255, 0.12) !important;
+      border-color: rgba(255,255,255,0.12) !important;
     }
     /* 夜间修正错题本/收藏夹列表项过亮问题 */
     .dark #tab-wrong .bg-red-50,
@@ -1574,7 +1613,7 @@
       flex:1 1 0%;
       min-height:0 !important; /* 允许收缩 */
       max-height:none !important;
-      overflow:auto !important; /* 超
+      overflow:auto !important; /* 超出滚动 */
     }
   </style>
   <!-- Quill 富文本编辑器 -->
@@ -1752,6 +1791,324 @@
       height:28px !important;
     }
   </style>
+  
+  <!-- 移动端全面适配 -->
+  <style id="mobile-responsive">
+    /* 平板设备适配 (768px - 1024px) */
+    @media (min-width: 768px) and (max-width: 1024px) {
+      /* 整体布局调整 */
+      .flex {
+        gap: 1rem;
+      }
+      
+      /* 侧边栏适配 */
+      aside.w-56 {
+        width: 14rem !important;
+        min-width: 14rem !important;
+      }
+      
+      /* 主内容区域 */
+      #main-section {
+        margin: 1rem 0.5rem;
+      }
+      
+      /* 按钮和图标大小 */
+      .logo-tijing svg {
+        width: 32px;
+        height: 32px;
+      }
+      
+      /* 卡片间距优化 */
+      .draggable-lib {
+        padding: 14px 16px;
+        min-height: 88px;
+      }
+      
+      /* 模态框适配 */
+      .modal-bg > div {
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+      }
+    }
+    
+    /* 手机设备适配 (≤ 767px) */
+    @media (max-width: 767px) {
+      /* 整体布局 */
+      body {
+        font-size: 14px;
+      }
+      
+      /* 顶部导航 */
+      header {
+        padding: 0.75rem 1rem;
+        gap: 0.75rem;
+      }
+      
+      .logo-tijing svg {
+        width: 24px;
+        height: 24px;
+      }
+      
+      /* 侧边栏隐藏，改为底部导航 */
+      aside.w-56 {
+        display: none;
+      }
+      
+      /* 主内容区域全宽 */
+      #main-section {
+        margin: 0.25rem 0;
+        border-radius: 0.5rem;
+      }
+      
+      /* 卡片样式优化 */
+      .draggable-lib {
+        padding: 12px 14px;
+        min-height: 80px;
+        margin-bottom: 0.5rem;
+      }
+      
+      /* 按钮大小适配 */
+      button {
+        min-height: 40px;
+        font-size: 14px;
+        padding: 0.5rem 1rem;
+      }
+      
+      /* 模态框全屏适配 */
+      .modal-bg {
+        padding: 1rem;
+      }
+      
+      .modal-bg > div {
+        margin: 0;
+        max-width: 100%;
+        width: 100%;
+        border-radius: 1rem;
+      }
+      
+      /* 练习界面适配 */
+      #practice-content {
+        padding: 1rem;
+      }
+      
+      /* 练习时隐藏底部导航栏 */
+      body.practice-mode #mobile-nav {
+        display: none !important;
+      }
+      
+      #question-stem {
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      
+      .option-item {
+        padding: 0.75rem 1rem;
+        margin: 0.5rem 0;
+        border-radius: 0.5rem;
+      }
+      
+      /* 底部操作栏 */
+      .fixed.bottom-0 {
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        border-radius: 0 !important;
+        padding: 0.75rem !important;
+      }
+      
+      /* 搜索框适配 */
+      #lib-search {
+        font-size: 16px; /* 防止iOS缩放 */
+        padding: 0.75rem 1rem;
+      }
+      
+      /* 标签页适配 */
+      .tab-btn {
+        padding: 0.5rem 1rem;
+        font-size: 14px;
+      }
+      
+      /* 图标适配 */
+      .fas, .far, .fab {
+        font-size: 14px;
+      }
+      
+      /* 统计图表适配 */
+      canvas {
+        max-height: 200px !important;
+      }
+      
+      /* 错题本/收藏夹列表适配 */
+      .wrong-cat, .fav-cat {
+        margin-bottom: 0.75rem;
+      }
+      
+      .wrong-lib, .fav-lib {
+        padding: 0.75rem 1rem;
+        margin: 0.25rem 0;
+      }
+    }
+    
+    /* 小屏手机适配 (≤ 480px) */
+    @media (max-width: 480px) {
+      body {
+        font-size: 13px;
+      }
+      
+      header {
+        padding: 0.5rem 0.75rem;
+      }
+      
+      .logo-tijing svg {
+        width: 20px;
+        height: 20px;
+      }
+      
+      /* 按钮文字简化 */
+      button span {
+        display: none;
+      }
+      
+      button i {
+        margin: 0 !important;
+      }
+      
+      /* 卡片进一步压缩 */
+      .draggable-lib {
+        padding: 10px 12px;
+        min-height: 72px;
+      }
+      
+      /* 练习界面优化 */
+      #question-stem {
+        font-size: 15px;
+      }
+      
+      .option-item {
+        padding: 0.5rem 0.75rem;
+      }
+      
+      /* 模态框按钮调整 */
+      .modal-bg button {
+        padding: 0.4rem 0.8rem;
+        font-size: 13px;
+      }
+    }
+    
+    /* 触摸设备优化 */
+    @media (hover: none) and (pointer: coarse) {
+      /* 增加触摸目标大小 */
+      button, .clickable, .draggable-cat, .draggable-lib {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      
+      /* 移除悬停效果 */
+      button:hover, .clickable:hover, .draggable-cat:hover, .draggable-lib:hover {
+        transform: none;
+        box-shadow: none;
+      }
+      
+      /* 触摸反馈 */
+      button:active, .clickable:active {
+        background-color: rgba(99, 102, 241, 0.2);
+      }
+      
+      /* 防止文本选择 */
+      .draggable-cat, .draggable-lib {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+    }
+    
+    /* 横屏适配 */
+    @media (max-width: 767px) and (orientation: landscape) {
+      /* 横屏时压缩高度 */
+      header {
+        padding: 0.5rem 1rem;
+      }
+      
+      .draggable-lib {
+        min-height: 60px;
+        padding: 8px 12px;
+      }
+      
+      /* 练习界面优化 */
+      #practice-content {
+        padding: 0.5rem;
+      }
+      
+      .fixed.bottom-0 {
+        padding: 0.5rem !important;
+      }
+      
+      /* 横屏时隐藏底部导航栏 */
+      #mobile-nav {
+        display: none !important;
+      }
+    }
+    
+    /* 防止iOS橡皮筋效果 */
+    @supports (-webkit-touch-callout: none) {
+      body {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+    
+    /* 键盘弹出时调整布局 */
+    @media (max-width: 767px) {
+      body.keyboard-open {
+        #mobile-nav {
+          transform: translateY(100%);
+        }
+      }
+    }
+    
+    /* 移动端优化点击区域 */
+    @media (max-width: 767px) {
+      .clickable-area {
+        min-height: 44px;
+        min-width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      /* 防止误触 */
+      .draggable-lib, .draggable-cat {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      
+      /* 优化长按菜单 */
+      .draggable-lib, .draggable-cat {
+        -webkit-touch-callout: default;
+      }
+      
+      /* 移动端滚动优化 */
+      .scroll-list {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+      }
+      
+      /* 防止页面缩放 */
+      input[type="text"], input[type="search"], textarea {
+        font-size: 16px;
+        transform: scale(1);
+      }
+    }
+  </style>
+  
   <!-- 取消紧凑模式样式，始终保持统一卡片尺寸 -->
   <style id="card-size-lock">
     /* 题库卡片保持统一尺寸与上下留白 */
@@ -1840,12 +2197,61 @@
     .dark .active-practice-library .draggable-lib {
       background: rgba(99, 102, 241, 0.1) !important;
     }
+    
+    /* 移动端性能优化 */
+    .mobile-optimized {
+      /* 减少动画效果 */
+      animation-duration: 0.2s !important;
+      transition-duration: 0.2s !important;
+    }
+    
+    .mobile-optimized * {
+      /* 优化移动端渲染 */
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      perspective: 1000px;
+    }
+    
+    /* 移动端加载指示器样式 */
+    #mobile-loading {
+      backdrop-filter: blur(4px);
+      background: rgba(255, 255, 255, 0.95);
+    }
+    
+    .dark #mobile-loading {
+      background: rgba(17, 24, 39, 0.95);
+    }
+    
+    /* 移动端触摸优化 */
+    @media (max-width: 768px) {
+      .touch-target {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      
+      /* 优化滚动性能 */
+      .scroll-container {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+      }
+      
+      /* 减少阴影效果 */
+      .shadow-lg {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-300">
-  <!-- 桌面端容器 -->
-  <div class="desktop-container">
-    <!-- 顶部LOGO+系统名 -->
+  <!-- 移动端加载指示器 -->
+  <div id="mobile-loading" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center" style="display: none;">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+      <p class="text-gray-600 dark:text-gray-400">正在加载应用...</p>
+    </div>
+  </div>
+  
+  <!-- 顶部LOGO+系统名 -->
   <header class="flex items-center gap-3 px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm select-none sticky top-0 z-50" style="backdrop-filter: blur(6px);">
     <!-- 删除署名元素 -->
     <!-- <div class="author-signature"><span>Leosu</span></div> -->
@@ -1956,9 +2362,46 @@
       <div class="text-gray-400 text-sm">练习时显示题号跳转</div>
     </aside>
   </main>
+  
+  <!-- 移动端底部导航栏 -->
+  <nav id="mobile-nav" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-40 hidden shadow-lg">
+    <div class="flex justify-around items-center py-2">
+      <!-- 题库标签 -->
+      <button class="mobile-nav-btn flex flex-col items-center p-2 text-indigo-600 dark:text-indigo-400" data-tab="library">
+        <i class="fas fa-book text-xl mb-1"></i>
+        <span class="text-xs">题库</span>
+      </button>
+      
+      <!-- 错题本标签 -->
+      <button class="mobile-nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400" data-tab="wrong">
+        <i class="fas fa-times-circle text-xl mb-1"></i>
+        <span class="text-xs">错题</span>
+      </button>
+      
+      <!-- 收藏夹标签 -->
+      <button class="mobile-nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400" data-tab="fav">
+        <i class="fas fa-star text-xl mb-1"></i>
+        <span class="text-xs">收藏</span>
+      </button>
+      
+      <!-- 统计标签 -->
+      <button class="mobile-nav-btn flex flex-col items-center p-2 text-gray-500 dark:text-gray-400" data-tab="stats">
+        <i class="fas fa-chart-bar text-xl mb-1"></i>
+        <span class="text-xs">统计</span>
+      </button>
+      
+      <!-- 导入按钮 -->
+      <button id="mobile-upload-btn" class="flex flex-col items-center p-2 text-gray-500 dark:text-gray-400">
+        <i class="fas fa-upload text-xl mb-1"></i>
+        <span class="text-xs">导入</span>
+      </button>
+    </div>
+  </nav>
 
   <!-- 上传题库文件input（隐藏） -->
-  <input id="file-upload" type="file" accept=".xlsx,.xls" class="hidden" />
+  <input id="file-upload" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/octet-stream" class="hidden" />
+  <input id="file-upload-mobile" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/octet-stream" class="hidden" capture="filesystem" />
+  <input id="file-upload-wechat" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/octet-stream,*/*" class="hidden" />
 
   <!-- 分类选择/新建弹窗 -->
   <div id="category-modal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg hidden">
@@ -2459,10 +2902,52 @@
     // 分类与题库本地存储结构
     let categories = [];
     
+    // 移动端localStorage优化缓存
+    let mobileCache = {};
+    
+    // 优化的localStorage读取
+    function getLocalStorage(key, defaultValue = null) {
+      if (mobileCache[key] !== undefined) {
+        return mobileCache[key];
+      }
+      
+      try {
+        const value = localStorage.getItem(key);
+        mobileCache[key] = value ? JSON.parse(value) : defaultValue;
+        return mobileCache[key];
+      } catch (error) {
+        console.error('读取localStorage失败:', error);
+        return defaultValue;
+      }
+    }
+    
+    // 批量预加载关键数据
+    function preloadMobileData() {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // 预加载常用数据
+        const keysToPreload = [
+          'tijing-categories',
+          'tijing-wrongbook',
+          'tijing-favbook',
+          'tijing-notes',
+          'theme'
+        ];
+        
+        keysToPreload.forEach(key => {
+          getLocalStorage(key);
+        });
+      }
+    }
+    
     // 初始化数据存储
     async function initializeStorage() {
       try {
         console.log('初始化数据存储...');
+        
+        // 移动端预加载数据
+        preloadMobileData();
         
         // 优先从文件存储加载数据
         if (window.electronAPI) {
@@ -2476,7 +2961,7 @@
         }
         
         // 如果文件存储没有数据，尝试从localStorage读取
-        categories = JSON.parse(localStorage.getItem('tijing-categories') || '[]');
+        categories = getLocalStorage('tijing-categories', []);
         console.log('从localStorage加载了', categories.length, '个分类');
         
         // 如果从localStorage读取到数据，立即保存到文件存储
@@ -2493,9 +2978,43 @@
       renderCategories();
     }
     
+    // 移动端性能优化
+    function optimizeMobilePerformance() {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // 显示加载指示器
+        const loadingIndicator = document.getElementById('mobile-loading');
+        if (loadingIndicator) {
+          loadingIndicator.style.display = 'flex';
+        }
+        
+        // 优化移动端触摸响应
+        document.addEventListener('touchstart', function() {}, { passive: true });
+        
+        // 减少移动端动画
+        if (window.innerWidth <= 768) {
+          document.body.classList.add('mobile-optimized');
+        }
+        
+        // 隐藏加载指示器
+        setTimeout(() => {
+          if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+          }
+        }, 1500);
+      }
+    }
+    
     // 页面加载完成后调用初始化
     document.addEventListener('DOMContentLoaded', () => {
+      // 优先执行移动端性能优化
+      optimizeMobilePerformance();
+      
       initializeStorage();
+      
+      // 初始化移动端导航栏
+      initMobileNav();
     });
     
     async function saveCategories() {
@@ -2524,6 +3043,165 @@
     // 答题卡分页变量
     let answerSheetPage = 0;
     const ANSWER_SHEET_PAGE_SIZE = 100;
+
+    // 移动端导航栏功能
+    function initMobileNav() {
+      const mobileNav = document.getElementById('mobile-nav');
+      const mobileUploadBtn = document.getElementById('mobile-upload-btn');
+      const fileInput = document.getElementById('file-upload');
+      
+      // 根据屏幕宽度决定是否显示移动端导航栏
+      function updateNavVisibility() {
+        if (window.innerWidth <= 767) {
+          mobileNav.classList.remove('hidden');
+        } else {
+          mobileNav.classList.add('hidden');
+        }
+      }
+      
+      // 键盘弹出检测
+      function handleKeyboardVisibility() {
+        const isKeyboardOpen = window.innerHeight < window.screen.height * 0.7;
+        if (isKeyboardOpen) {
+          document.body.classList.add('keyboard-open');
+        } else {
+          document.body.classList.remove('keyboard-open');
+        }
+      }
+      
+      // 监听键盘事件
+      window.addEventListener('resize', handleKeyboardVisibility);
+      
+      // 监听输入框焦点事件
+      document.addEventListener('focusin', (e) => {
+        if (e.target.matches('input, textarea')) {
+          document.body.classList.add('keyboard-open');
+        }
+      });
+      
+      document.addEventListener('focusout', (e) => {
+        if (e.target.matches('input, textarea')) {
+          setTimeout(() => {
+            document.body.classList.remove('keyboard-open');
+          }, 300);
+        }
+      });
+      
+      // 初始化显示状态
+      updateNavVisibility();
+      
+      // 监听窗口大小变化
+      window.addEventListener('resize', updateNavVisibility);
+      
+      // 移动端上传按钮点击事件
+      mobileUploadBtn.addEventListener('click', () => {
+        // 检测是否为移动设备
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+          if (isWeChat) {
+            // 微信环境特殊处理
+            const wechatFileInput = document.getElementById('file-upload-wechat');
+            
+            // 微信方案1：使用通配符accept
+            wechatFileInput.setAttribute('accept', '*/*');
+            wechatFileInput.click();
+            
+            // 微信方案2：延迟后尝试Excel特定类型
+            setTimeout(() => {
+              if (wechatFileInput.files.length === 0) {
+                console.log('微信方案1失败，尝试方案2');
+                wechatFileInput.setAttribute('accept', '.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/octet-stream');
+                wechatFileInput.click();
+              }
+            }, 1000);
+            
+            // 微信方案3：使用普通文件选择器
+            setTimeout(() => {
+              if (wechatFileInput.files.length === 0) {
+                console.log('微信方案2失败，尝试方案3');
+                fileInput.click();
+              }
+            }, 2000);
+          } else {
+            // 普通移动设备处理
+            const mobileFileInput = document.getElementById('file-upload-mobile');
+            
+            // 方案1：使用 capture="filesystem" 访问文件系统
+            mobileFileInput.setAttribute('accept', '.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/octet-stream');
+            mobileFileInput.setAttribute('capture', 'filesystem');
+            mobileFileInput.click();
+            
+            // 方案2：移除 capture 属性
+            setTimeout(() => {
+              if (mobileFileInput.files.length === 0) {
+                console.log('方案1失败，尝试方案2');
+                mobileFileInput.removeAttribute('capture');
+                mobileFileInput.click();
+              }
+            }, 1000);
+            
+            // 方案3：使用普通文件选择器
+            setTimeout(() => {
+              if (mobileFileInput.files.length === 0) {
+                console.log('方案2失败，尝试方案3');
+                fileInput.click();
+              }
+            }, 2000);
+          }
+        } else {
+          // 桌面端使用普通文件选择器
+          fileInput.click();
+        }
+      });
+      
+      // 移动端导航栏标签切换事件
+      document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const tab = btn.getAttribute('data-tab');
+          if (!tab) return;
+          
+          // 切换到对应的标签页
+          const tabBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+          if (tabBtn) {
+            tabBtn.click();
+          }
+          
+          // 更新导航栏按钮状态
+          document.querySelectorAll('.mobile-nav-btn').forEach(b => {
+            b.classList.remove('text-indigo-600', 'dark:text-indigo-400');
+            b.classList.add('text-gray-500', 'dark:text-gray-400');
+          });
+          
+          btn.classList.remove('text-gray-500', 'dark:text-gray-400');
+          btn.classList.add('text-indigo-600', 'dark:text-indigo-400');
+        });
+      });
+      
+      // 监听标签页切换事件，同步移动端导航栏状态
+      const observer = new MutationObserver(() => {
+        const activeTab = document.querySelector('.tab-btn.ring-2');
+        if (activeTab) {
+          const tab = activeTab.getAttribute('data-tab');
+          document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+            const btnTab = btn.getAttribute('data-tab');
+            if (btnTab === tab) {
+              btn.classList.remove('text-gray-500', 'dark:text-gray-400');
+              btn.classList.add('text-indigo-600', 'dark:text-indigo-400');
+            } else {
+              btn.classList.remove('text-indigo-600', 'dark:text-indigo-400');
+              btn.classList.add('text-gray-500', 'dark:text-gray-400');
+            }
+          });
+        }
+      });
+      
+      // 观察标签按钮的变化
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        observer.observe(btn, { attributes: true, attributeFilter: ['class'] });
+      });
+    }
 
     // 题库功能
     
@@ -2705,10 +3383,15 @@
 
     // 错题本本地存储
     function getWrongBook() {
-      return JSON.parse(localStorage.getItem('tijing-wrongbook') || '[]');
+      return getLocalStorage('tijing-wrongbook', []);
     }
     function setWrongBook(arr) {
-      localStorage.setItem('tijing-wrongbook', JSON.stringify(arr));
+      try {
+        localStorage.setItem('tijing-wrongbook', JSON.stringify(arr));
+        mobileCache['tijing-wrongbook'] = arr; // 更新缓存
+      } catch (e) {
+        console.error('保存错题本失败:', e);
+      }
     }
     // 练习区答错题自动归入错题本
     function addToWrongBook(q) {
@@ -2720,10 +3403,15 @@
     }
     // 收藏夹本地存储
     function getFavBook() {
-      return JSON.parse(localStorage.getItem('tijing-favbook') || '[]');
+      return getLocalStorage('tijing-favbook', []);
     }
     function setFavBook(arr) {
-      localStorage.setItem('tijing-favbook', JSON.stringify(arr));
+      try {
+        localStorage.setItem('tijing-favbook', JSON.stringify(arr));
+        mobileCache['tijing-favbook'] = arr; // 更新缓存
+      } catch (e) {
+        console.error('保存收藏本失败:', e);
+      }
     }
     function isFav(q) {
       return getFavBook().find(item => item.stem === q.stem && item.answer === q.answer);
@@ -2749,13 +3437,46 @@
     // 只在非 Electron 环境中设置原有的上传逻辑
     if (typeof window.electronAPI === 'undefined') {
       const uploadBtn = document.getElementById('upload-btn');
-      uploadBtn.onclick = () => fileInput.click();
+      
+      // 移动端优化：支持触摸事件
+      uploadBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        fileInput.click();
+      });
+      
+      uploadBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        fileInput.click();
+      });
     }
+    
     // 只在非 Electron 环境中设置文件输入处理
     if (typeof window.electronAPI === 'undefined') {
-      fileInput.onchange = (e) => {
+      fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        
+        // 检查文件类型
+        const validTypes = [
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-excel',
+          'application/vnd.ms-excel.sheet.macroEnabled.12'
+        ];
+        
+        const isExcelFile = validTypes.includes(file.type) || 
+                          file.name.toLowerCase().endsWith('.xlsx') || 
+                          file.name.toLowerCase().endsWith('.xls');
+        
+        if (!isExcelFile) {
+          alert('请选择Excel文件（.xlsx或.xls格式）');
+          return;
+        }
+        
+        // 显示加载状态
+        const uploadBtn = document.getElementById('upload-btn');
+        const originalText = uploadBtn.innerHTML;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+        uploadBtn.disabled = true;
         
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -2766,14 +3487,136 @@
               .catch(err => {
                 console.error('处理文件失败:', err);
                 alert('处理文件失败: ' + (err.message || '未知错误'));
+              })
+              .finally(() => {
+                // 恢复按钮状态
+                uploadBtn.innerHTML = originalText;
+                uploadBtn.disabled = false;
               });
           } catch (err) {
             console.error('处理文件失败:', err);
             alert('处理文件失败: ' + (err.message || '未知错误'));
+            uploadBtn.innerHTML = originalText;
+            uploadBtn.disabled = false;
           }
         };
+        
+        reader.onerror = function() {
+          alert('读取文件失败，请重试');
+          uploadBtn.innerHTML = originalText;
+          uploadBtn.disabled = false;
+        };
+        
         reader.readAsArrayBuffer(file);
-      };
+      });
+      
+      // 移动端专用文件选择器事件处理
+      const mobileFileInput = document.getElementById('file-upload-mobile');
+      mobileFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // 检查文件类型
+        const validTypes = [
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-excel',
+          'application/vnd.ms-excel.sheet.macroEnabled.12',
+          'application/octet-stream'
+        ];
+        
+        const isExcelFile = validTypes.includes(file.type) || 
+                          file.name.toLowerCase().endsWith('.xlsx') || 
+                          file.name.toLowerCase().endsWith('.xls');
+        
+        if (!isExcelFile) {
+          alert('请选择Excel文件（.xlsx或.xls格式）');
+          return;
+        }
+        
+        // 显示加载状态
+        const uploadBtn = document.getElementById('upload-btn');
+        const originalText = uploadBtn.innerHTML;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+        uploadBtn.disabled = true;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            // 确保调用全局作用域中的函数
+            parseQuestionBankFromContent(data, file.name)
+              .catch(err => {
+                console.error('处理文件失败:', err);
+                alert('处理文件失败：' + err.message);
+                uploadBtn.innerHTML = originalText;
+                uploadBtn.disabled = false;
+              });
+          } catch (err) {
+            console.error('读取文件失败:', err);
+            alert('读取文件失败，请重试');
+            uploadBtn.innerHTML = originalText;
+            uploadBtn.disabled = false;
+          }
+        };
+        
+        reader.onerror = function() {
+          alert('读取文件失败，请重试');
+          uploadBtn.innerHTML = originalText;
+          uploadBtn.disabled = false;
+        };
+        
+        reader.readAsArrayBuffer(file);
+      });
+      
+      // 微信专用文件选择器事件处理
+      const wechatFileInput = document.getElementById('file-upload-wechat');
+      wechatFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // 微信环境下文件类型检查更宽松
+        const isExcelFile = file.name.toLowerCase().endsWith('.xlsx') || 
+                          file.name.toLowerCase().endsWith('.xls');
+        
+        if (!isExcelFile) {
+          alert('请选择Excel文件（.xlsx或.xls格式）');
+          return;
+        }
+        
+        // 显示加载状态
+        const uploadBtn = document.getElementById('upload-btn');
+        const originalText = uploadBtn.innerHTML;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中...';
+        uploadBtn.disabled = true;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = new Uint8Array(e.target.result);
+            // 确保调用全局作用域中的函数
+            parseQuestionBankFromContent(data, file.name)
+              .catch(err => {
+                console.error('处理文件失败:', err);
+                alert('处理文件失败：' + err.message);
+                uploadBtn.innerHTML = originalText;
+                uploadBtn.disabled = false;
+              });
+          } catch (err) {
+            console.error('读取文件失败:', err);
+            alert('读取文件失败，请重试');
+            uploadBtn.innerHTML = originalText;
+            uploadBtn.disabled = false;
+          }
+        };
+        
+        reader.onerror = function() {
+          alert('读取文件失败，请重试');
+          uploadBtn.innerHTML = originalText;
+          uploadBtn.disabled = false;
+        };
+        
+        reader.readAsArrayBuffer(file);
+      });
     }
     // 取消按钮处理（适用于所有环境）
     categoryCancel.onclick = () => {
@@ -2882,45 +3725,49 @@
       document.getElementById('main-section')?.classList.remove('hidden');
       // 若统计页开启，则关闭它
       document.getElementById('stats-section')?.classList.add('hidden');
-      practiceState = {
-        library,
-        questions: library.questions,
-        current: 0,
-        userAnswers: null, // 先不初始化
-        submitted: null,   // 先不初始化
-        mode,
-        startTime: Date.now(),
-        finished: false,
-        score: 0,
-        duration: 0,
-        orderMode: 'ordered',
-        originalQuestions: library.questions.slice()
-      };
+      
+      // 添加练习模式body class
+      document.body.classList.add('practice-mode');
+      let saved = loadPracticeProgress(library);
+      if (saved && Array.isArray(saved.userAnswers) && Array.isArray(saved.submitted)) {
+        practiceState = {
+          library,
+          questions: library.questions,
+          current: typeof saved.currentIndex === 'number' ? saved.currentIndex : 0,
+          userAnswers: JSON.parse(JSON.stringify(saved.userAnswers)),
+          submitted: JSON.parse(JSON.stringify(saved.submitted)),
+          mode,
+          startTime: Date.now(),
+          finished: !!saved.finished,
+          score: 0,
+          duration: 0,
+          orderMode: 'ordered',
+          originalQuestions: library.questions.slice()
+        };
+        if (saved.finished) {
+          practiceState.finished = true;
+          practiceState.current = practiceState.questions.length - 1;
+        }
+      } else {
+        practiceState = {
+          library,
+          questions: library.questions,
+          current: 0,
+          userAnswers: Array(library.questions.length).fill(null),
+          submitted: Array(library.questions.length).fill(false),
+          mode,
+          startTime: Date.now(),
+          finished: false,
+          score: 0,
+          duration: 0,
+          orderMode: 'ordered',
+          originalQuestions: library.questions.slice()
+        };
+      }
       practiceState.questions.forEach(q => {
         if (!q._libraryName) q._libraryName = library.name;
         if (!q._categoryName) q._categoryName = library._categoryName || '';
       });
-      // ========== 进度恢复 ==========
-      let saved = loadPracticeProgress(practiceState.library);
-      if (saved && Array.isArray(saved.userAnswers) && Array.isArray(saved.submitted)) {
-        practiceState.userAnswers = JSON.parse(JSON.stringify(saved.userAnswers));
-        practiceState.submitted = JSON.parse(JSON.stringify(saved.submitted));
-        if (saved.finished) {
-          practiceState.finished = true;
-          practiceState.current = practiceState.questions.length - 1;
-          renderPractice();
-          renderAnswerSheet();
-          return;
-        } else {
-          let lastSubmitted = practiceState.submitted.lastIndexOf(true);
-          let nextIdx = lastSubmitted + 1;
-          if (nextIdx >= practiceState.questions.length) nextIdx = practiceState.questions.length - 1;
-          practiceState.current = nextIdx;
-        }
-      } else {
-        practiceState.userAnswers = Array(practiceState.questions.length).fill(null);
-        practiceState.submitted = Array(practiceState.questions.length).fill(false);
-      }
       highlightActiveLibrary(library);
       renderPractice();
       renderAnswerSheet();
@@ -2981,7 +3828,7 @@
             <button id="next-question" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow transition" ${current === questions.length-1 ? 'disabled' : ''}>下一题</button>
           </div>
           ` : ''}
-          ${submitted[current] && mode!=='recite' ? `<div class="mb-4 text-base text-green-600 dark:text-green-300 font-semibold">答案：${q.answer}</div>` : ''}
+          <!-- 移除重复的答案注释 -->
           <div class="w-full">
           ${submitted[current] ? renderPracticeResult(q, userAnswers[current]) : ''}
             </div>
@@ -3002,13 +3849,11 @@
       const toggleBtn=document.getElementById('toggle-order-btn');
       if(toggleBtn){
         toggleBtn.onclick=()=>{
-          const oldAnswers = JSON.parse(JSON.stringify(practiceState.userAnswers));
-          const oldSubmitted = JSON.parse(JSON.stringify(practiceState.submitted));
           practiceState.orderMode = practiceState.orderMode==='ordered'?'shuffle':'ordered';
           practiceState.questions = practiceState.orderMode==='shuffle' ? shuffleArray(practiceState.originalQuestions.slice()) : practiceState.originalQuestions.slice();
           practiceState.current=0;
-          practiceState.userAnswers = oldAnswers;
-          practiceState.submitted = oldSubmitted;
+          practiceState.userAnswers = Array(practiceState.questions.length).fill(null);
+          practiceState.submitted = Array(practiceState.questions.length).fill(false);
           renderPractice();
           renderAnswerSheet();
         };
@@ -3038,27 +3883,26 @@
       const form = document.getElementById('answer-form');
       if (form) {
         form.onchange = () => {
-            // 只允许未提交的题目修改答案，防止断点续做时被覆盖
-            if (!practiceState.submitted[current]) {
-              let selected;
-              const opts = form.elements['option'];
-              if(q.type==='多选'){
-                selected = (Array.isArray(opts) || opts instanceof NodeList)
-                  ? Array.from(opts).filter(input => input.checked).map(input => input.value).sort()
-                  : (opts && opts.checked ? [opts.value] : []);
-              }else{
-                if (Array.isArray(opts) || opts instanceof NodeList) {
-                  const checked = Array.from(opts).find(input => input.checked);
-                  selected = checked ? checked.value : null;
-                } else {
-                  selected = opts && opts.checked ? opts.value : null;
-                }
+            let selected;
+            const opts = form.elements['option'];
+            if(q.type==='多选'){
+              // 多选题，opts 一定是 NodeList
+              selected = (Array.isArray(opts) || opts instanceof NodeList)
+                ? Array.from(opts).filter(input => input.checked).map(input => input.value).sort()
+                : (opts && opts.checked ? [opts.value] : []);
+            }else{
+              // 单选题，opts 可能是 NodeList 或单个元素
+              if (Array.isArray(opts) || opts instanceof NodeList) {
+                const checked = Array.from(opts).find(input => input.checked);
+                selected = checked ? checked.value : null;
+              } else {
+                selected = opts && opts.checked ? opts.value : null;
               }
-              practiceState.userAnswers[current] = selected;
-              renderPractice();
-              renderAnswerSheet();
             }
-          };
+            practiceState.userAnswers[current] = selected;
+          renderPractice();
+          renderAnswerSheet();
+        };
         }
       }
       // 按钮交互
@@ -3073,7 +3917,7 @@
       };
       document.getElementById('next-question').onclick = (e) => {
         e.preventDefault();
-        if (practiceState.current < questions.length-1) {
+        if (practiceState.current < practiceState.questions.length-1) {
           practiceState.current++;
           savePracticeProgress(practiceState.library, practiceState.current, practiceState.userAnswers, practiceState.submitted, practiceState.finished);
           renderPractice();
@@ -3096,15 +3940,12 @@
             return;
           }
           practiceState.submitted[practiceState.current] = true;
-          // 如果是最后一题，统计成绩
           if(practiceState.current===practiceState.questions.length-1){
             practiceState.finished=true;
             practiceState.duration = Math.floor((Date.now()-practiceState.startTime)/1000);
             practiceState.score = calcTotalScore(practiceState);
-            savePracticeProgress(practiceState.library, practiceState.current, true); // 保存已完成
-          } else {
-            savePracticeProgress(practiceState.library, practiceState.current, false); // 只在提交时保存进度
           }
+          savePracticeProgress(practiceState.library, practiceState.current, practiceState.userAnswers, practiceState.submitted, practiceState.finished);
           renderPractice();
           renderAnswerSheet();
         };
@@ -3121,11 +3962,43 @@
           if (mdDiv) mdDiv.innerHTML = '<span class="text-red-400">解析内容渲染出错</span>';
         }
       }
-      // ========== 进度自动保存：每次渲染题目后都保存 ==========
-      // [修正] 移除此处自动保存，只在提交按钮事件里保存进度
-      // if (practiceState && practiceState.library) {
-      //   savePracticeProgress(practiceState.library, practiceState.current, practiceState.finished);
-      // }
+      
+      // 练习结束按钮事件绑定
+      setTimeout(() => {
+        const restartBtn = document.getElementById('restart-practice');
+        const endBtn = document.getElementById('end-practice');
+        
+        if (restartBtn) {
+          restartBtn.onclick = () => {
+            // 重新练习
+            practiceState.current = 0;
+            practiceState.userAnswers = Array(practiceState.questions.length).fill(null);
+            practiceState.submitted = Array(practiceState.questions.length).fill(false);
+            practiceState.finished = false;
+            practiceState.startTime = Date.now();
+            practiceState.duration = 0;
+            practiceState.score = 0;
+            if (practiceState.orderMode === 'shuffle') {
+              practiceState.questions = shuffleArray(practiceState.originalQuestions.slice());
+            } else {
+              practiceState.questions = practiceState.originalQuestions.slice();
+            }
+            savePracticeProgress(practiceState.library, practiceState.current, practiceState.userAnswers, practiceState.submitted, practiceState.finished);
+            renderPractice();
+            renderAnswerSheet();
+          };
+        }
+        
+        if (endBtn) {
+          endBtn.onclick = () => {
+            // 结束练习，返回题库界面
+            document.body.classList.remove('practice-mode');
+            practiceState = null;
+            document.getElementById('main-section').innerHTML = '<div class="flex items-center justify-center h-full"><div class="text-center"><i class="fas fa-book text-6xl text-indigo-200 mb-4"></i><p class="text-gray-500">请选择一个题库开始练习</p></div></div>';
+            document.getElementById('stats-section')?.classList.add('hidden');
+          };
+        }
+      }, 0);
     }
     function renderReciteMode(q){
       // 背题模式：只显示选项、答案、解析（不重复题干）
@@ -3260,6 +4133,24 @@
       const user = Array.isArray(selected) ? selected.sort().join('') : (selected || '');
       const isCorrect = user === correct;
       if (!isCorrect) addToWrongBook(q);
+      let explanationHtml = '';
+      try {
+        // 日志与健壮性处理
+        const explanationStr = typeof q.explanation === 'string' ? q.explanation : (q.explanation ? JSON.stringify(q.explanation) : '');
+        const converted = typeof convertImageLinks === 'function' ? convertImageLinks(explanationStr) : explanationStr;
+        console.log('explanation原始：', q.explanation);
+        console.log('explanation字符串：', explanationStr);
+        console.log('convertImageLinks结果：', converted);
+        if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+          explanationHtml = explanationStr ? marked.parse(converted) : '<span class="text-gray-400">无解析内容</span>';
+        } else {
+          console.error('marked.js 未正确加载');
+          explanationHtml = '<span class="text-red-400">解析内容渲染出错(marked未加载)</span>';
+        }
+      } catch (e) {
+        console.error('解析内容渲染出错', e, q.explanation);
+        explanationHtml = '<span class="text-red-400">解析内容渲染出错</span>';
+      }
       return `
         <div class="explain-card mt-6 p-5 rounded-2xl bg-gradient-to-r from-pink-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 border border-pink-200 dark:border-pink-600 shadow flex flex-col gap-2">
           <div class="flex items-center gap-2 mb-1">
@@ -3272,7 +4163,7 @@
             <span class="font-bold text-pink-600 dark:text-pink-300 text-base">解析</span>
             <div class="flex-1 border-t border-dashed border-pink-200 dark:border-pink-500 ml-2"></div>
           </div>
-          <div class="text-base text-gray-700 dark:text-gray-200 markdown-body" id="explanation-md"></div>
+          <div class="text-base text-gray-700 dark:text-gray-200 markdown-body" id="explanation-md">${explanationHtml}</div>
         </div>
       `;
     }
@@ -4046,13 +4937,18 @@
         const res=await window.electronAPI.loadNotes();
         if(res.success && res.data) return res.data;
       }
-      return JSON.parse(localStorage.getItem('tijing-notes')||'{}');
+      return getLocalStorage('tijing-notes', {});
     }
     async function setNotes(obj){
       if(typeof window.electronAPI!=='undefined' && window.electronAPI.saveNotes){
         await window.electronAPI.saveNotes(obj);
       }
-      localStorage.setItem('tijing-notes',JSON.stringify(obj));
+      try {
+        localStorage.setItem('tijing-notes',JSON.stringify(obj));
+        mobileCache['tijing-notes'] = obj; // 更新缓存
+      } catch (e) {
+        console.error('保存笔记失败:', e);
+      }
     }
     // 根据题库名、分类名、题干生成稳定且唯一的 key；避免题干文本小改导致无法匹配。
     function getQuestionKey(q){
@@ -4090,28 +4986,7 @@
               [{ 'color': COLORS }, { 'background': COLORS }],
               [{ 'list': 'ordered'}, { 'list': 'bullet' }],
               ['code-block', 'image']
-            ],
-            clipboard: {
-              matchers: [
-                [Node.ELEMENT_NODE, (node, delta) => {
-                  // 清除所有背景样式
-                  if (node.hasAttribute('style')) {
-                    const style = node.getAttribute('style');
-                    const newStyle = style.replace(/background\s*:\s*[^;]+;/gi, '').trim();
-                    if (newStyle) {
-                      node.setAttribute('style', newStyle);
-                    } else {
-                      node.removeAttribute('style');
-                    }
-                  }
-                  // 清除背景色属性
-                  if (node.hasAttribute('bgcolor')) {
-                    node.removeAttribute('bgcolor');
-                  }
-                  return delta;
-                }]
-              ]
-            }
+            ]
           }
         });
       }
@@ -4604,877 +5479,81 @@
       });
     });
 
-    // 初始化移动端适配
-    if (window.mobileUIAdapter) {
-      window.mobileUIAdapter.init();
-    }
-
-    // 如果在测试模式，自动运行测试
-    if (window.location.search.includes('test=mobile') && window.mobileIntegrationTest) {
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          window.mobileIntegrationTest.runTests();
-        }, 1000);
-      });
-    }
-
-    // ========== 1. 进度保存与恢复工具函数 ========== //
-    // 进度文件路径（Electron优先本地文件，否则用localStorage）
-    const PROGRESS_PATH = 'storage/data/progress.json';
-
-    // 保存进度到本地文件或localStorage
-    function savePracticeProgress(libraryId, currentIdx, userAnswers, submitted, finished = false) {
+    // ========== 进度保存/恢复/清除 ========== //
+    function savePracticeProgress(library, currentIdx, userAnswers, submitted, finished) {
       try {
-        let progress = JSON.parse(localStorage.getItem('tijing_progress') || '{}');
-        progress[libraryId] = {
+        const key = 'tijing_progress';
+        let progress = JSON.parse(localStorage.getItem(key) || '{}');
+        const id = library.id || library.name;
+        progress[id] = {
           currentIndex: currentIdx,
           userAnswers: JSON.parse(JSON.stringify(userAnswers)),
           submitted: JSON.parse(JSON.stringify(submitted)),
-          finished
+          finished: !!finished
         };
-        localStorage.setItem('tijing_progress', JSON.stringify(progress));
+        localStorage.setItem(key, JSON.stringify(progress));
       } catch (e) {}
     }
-    // 读取进度
     function loadPracticeProgress(library) {
       try {
-        const libraryId = library.id || library.name;
-        const progress = JSON.parse(localStorage.getItem('tijing_progress') || '{}');
-        const saved = progress[libraryId];
-        
-        if (!saved) return null;
-        
-        // 验证保存的进度数据是否有效
-        if (typeof saved.currentIndex !== 'number' || 
-            !Array.isArray(saved.userAnswers) || 
-            !Array.isArray(saved.submitted)) {
-          console.warn('无效的进度数据格式', saved);
-          return null;
-        }
-        
-        console.log(`进度已加载: 题库=${libraryId}, 当前题=${saved.currentIndex}, 已完成=${saved.finished}`);
-        return saved;
-      } catch (e) {
-        console.error('加载进度失败:', e);
-        return null;
-      }
+        const key = 'tijing_progress';
+        const id = library.id || library.name;
+        const progress = JSON.parse(localStorage.getItem(key) || '{}');
+        return progress[id] || null;
+      } catch (e) { return null; }
     }
-    // 清除进度
-    function clearPracticeProgress(libraryId) {
-          try {
-            let progress = JSON.parse(localStorage.getItem('tijing_progress') || '{}');
-            delete progress[libraryId];
-            localStorage.setItem('tijing_progress', JSON.stringify(progress));
-            showToast('进度已清除');
-          } catch (e) {}
-        }
-    
-        // 显示提示消息
-        function showToast(message, duration = 2000) {
-          // 创建或获取toast元素
-          let toast = document.getElementById('toast-message');
-          if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'toast-message';
-            toast.style.position = 'fixed';
-            toast.style.bottom = '20px';
-            toast.style.left = '50%';
-            toast.style.transform = 'translateX(-50%)';
-            toast.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-            toast.style.color = 'white';
-            toast.style.padding = '10px 20px';
-            toast.style.borderRadius = '4px';
-            toast.style.zIndex = '1000';
-            toast.style.transition = 'opacity 0.3s';
-            document.body.appendChild(toast);
-          }
-      
-          // 设置消息并显示
-          toast.textContent = message;
-          toast.style.opacity = '1';
-      
-          // 设置定时器，在指定时间后隐藏toast
-          clearTimeout(toast.timeoutId);
-          toast.timeoutId = setTimeout(() => {
-            toast.style.opacity = '0';
-          }, duration);
-        }
-    // ... existing code ...
-    // ========== 2. 在practiceState初始化时恢复进度 ========== //
-    // [修正] 注释掉此处老的进度恢复逻辑，避免覆盖 startPractice 的恢复
-    // if (practiceState && practiceState.library) {
-    //   const savedIdx = loadPracticeProgress(practiceState.library);
-    //   if (savedIdx !== null && savedIdx < practiceState.questions.length - 1) {
-    //     practiceState.current = savedIdx + 1; // 跳到上次做完的下一题
-    //   } else if (savedIdx !== null && savedIdx >= practiceState.questions.length - 1) {
-    //     practiceState.current = 0; // 已做完全部题，从头开始
-    //   } else {
-    //     practiceState.current = 0;
-    //   }
-    // }
-    // ... existing code ...
-    // ========== 3. 在题目切换/提交/答题卡跳转后保存进度 ========== //
-    // [修正] 注释掉所有非提交事件里的 savePracticeProgress 调用
-    // 1. 上一题
-    // const prevBtn = document.getElementById('prev-question');
-    // if (prevBtn) {
-    //   prevBtn.onclick = (e) => {
-    //     e.preventDefault();
-    //     if (practiceState.current > 0) {
-    //       practiceState.current--;
-    //       savePracticeProgress(practiceState.library, practiceState.current, practiceState.userAnswers, practiceState.submitted);
-    //       renderPractice();
-    //       renderAnswerSheet();
-    //     }
-    //   };
-    // }
-    // 2. 下一题
-    // const nextBtn = document.getElementById('next-question');
-    // if (nextBtn) {
-    //   nextBtn.onclick = (e) => {
-    //     e.preventDefault();
-    //     if (practiceState.current < practiceState.questions.length-1) {
-    //       practiceState.current++;
-    //       savePracticeProgress(practiceState.library, practiceState.current, practiceState.userAnswers, practiceState.submitted);
-    //       renderPractice();
-    //       renderAnswerSheet();
-    //     }
-    //   };
-    // }
-    // 3. 答题卡跳转
-    // ...在renderAnswerSheet的btn.onclick里加：
-    // savePracticeProgress(practiceState.library, practiceState.current);
-    // ... existing code ...
-    // ========== 4. 修改renderFinalScore，添加"重新练习"按钮 ========== //
-    function renderFinalScore(){
-      const {score, questions, duration, library} = practiceState;
-      const min = Math.floor(duration/60), sec = duration%60;
-      return `<div class="mt-8 p-6 rounded-2xl bg-gradient-to-r from-indigo-50 to-pink-50 dark:from-gray-800 dark:to-gray-700 border border-indigo-200 dark:border-pink-600 shadow flex flex-col gap-2 items-center">
-        <div class="text-2xl font-bold text-indigo-600 dark:text-pink-300">总成绩：${score} 分 / ${questions.length+questions.filter(q=>q.type==='多选').length} 分</div>
-        <div class="text-lg text-gray-500 dark:text-gray-300">用时：${min}分${sec}秒</div>
-        <div class="flex gap-4 mt-4">
-          <button id="restart-practice" class="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-semibold shadow">重新练习</button>
-          <button id="end-practice" class="px-6 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold shadow">结束</button>
-        </div>
-      </div>`;
+    function clearPracticeProgress(library) {
+      try {
+        const key = 'tijing_progress';
+        const id = library.id || library.name;
+        let progress = JSON.parse(localStorage.getItem(key) || '{}');
+        delete progress[id];
+        localStorage.setItem(key, JSON.stringify(progress));
+      } catch (e) {}
     }
-    // ... existing code ...
-    // ========== 5. 结束页按钮事件监听 ========== //
+
+    // ========== 结束页按钮逻辑 ========== //
     document.addEventListener('click', function(e) {
       if (e.target && e.target.id === 'restart-practice') {
-        // 清除进度，重置状态到第一题
         clearPracticeProgress(practiceState.library);
-        practiceState.current = 0;
-        practiceState.userAnswers = Array(practiceState.questions.length).fill(null);
-        practiceState.submitted = Array(practiceState.questions.length).fill(false);
-        practiceState.finished = false;
-        practiceState.startTime = Date.now();
+        showToast('进度已清除');
+        setTimeout(()=>{
+          startPractice(practiceState.library);
+        }, 600);
+      }
+      if (e.target && e.target.id === 'end-practice') {
+        practiceState.finished = true;
+        savePracticeProgress(practiceState.library, practiceState.current, practiceState.userAnswers, practiceState.submitted, true);
+        showToast('已标记为完成');
         renderPractice();
         renderAnswerSheet();
       }
-      if (e.target && e.target.id === 'end-practice') {
-        // 结束，返回首页（假设有tab切换或首页逻辑）
-        // 这里可根据你的首页逻辑调整
-        window.location.reload(); // 或隐藏答题区，显示首页
-      }
     });
-    // ... existing code ...
-  </script>
-  
-  <!-- 桌面端容器结束 -->
-  </div>
-  
-  <!-- 移动端适配脚本 -->
-  <script src="capacitor-bridge.js"></script>
-  <script src="mobile-file-adapter.js"></script>
-  <script src="mobile-ui-adapter.js"></script>
-  <script src="mobile-test.js"></script>
-  
-  <style>
-    /* 设备检测和自适应布局 */
-    @media (max-width: 768px) {
-      /* 移动端基础样式重置 */
-      * {
-        -webkit-tap-highlight-color: transparent;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
+
+    function showToast(message, duration = 2000) {
+      let toast = document.getElementById('toast-message');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast-message';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        toast.style.color = 'white';
+        toast.style.padding = '10px 20px';
+        toast.style.borderRadius = '4px';
+        toast.style.zIndex = '1000';
+        toast.style.transition = 'opacity 0.3s';
+        document.body.appendChild(toast);
       }
-      
-      input, textarea {
-        -webkit-user-select: text;
-        user-select: text;
-      }
-      
-      body {
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-        font-family: 'Noto Sans SC', sans-serif;
-      }
-      
-      /* 隐藏桌面端元素 */
-      aside, .desktop-nav {
-        display: none !important;
-      }
-      
-      /* 移动端容器 */
-      .mobile-app-container {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        background: #f8fafc;
-      }
-      
-      /* 移动端顶部导航 */
-      .mobile-header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 56px;
-        background: white;
-        border-bottom: 1px solid #e5e7eb;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 16px;
-        z-index: 1000;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      }
-      
-      .mobile-header h1 {
-        font-size: 18px;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0;
-      }
-      
-      .mobile-header-actions {
-        display: flex;
-        gap: 12px;
-      }
-      
-      .mobile-header-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #f3f4f6;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #6b7280;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-      
-      .mobile-header-btn:active {
-        transform: scale(0.95);
-        background: #e5e7eb;
-      }
-      
-      /* 移动端主内容区域 */
-      .mobile-main-content {
-        flex: 1;
-        overflow-y: auto;
-        padding-top: 56px;
-        padding-bottom: 70px;
-        background: #f8fafc;
-      }
-      
-      /* 移动端底部导航 */
-      .mobile-bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 70px;
-        background: white;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        z-index: 1000;
-        padding-bottom: env(safe-area-inset-bottom);
-      }
-      
-      .mobile-nav-item {
-        flex: 1;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: none;
-        border: none;
-        color: #6b7280;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 12px;
-        gap: 4px;
-      }
-      
-      .mobile-nav-item.active {
-        color: #4f46e5;
-      }
-      
-      .mobile-nav-item:active {
-        transform: scale(0.95);
-      }
-      
-      .mobile-nav-item i {
-        font-size: 24px;
-      }
-      
-      /* 移动端卡片样式 */
-      .mobile-card {
-        background: white;
-        border-radius: 12px;
-        padding: 16px;
-        margin: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border: 1px solid #e5e7eb;
-      }
-      
-      .mobile-card h3 {
-        font-size: 16px;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0 0 12px 0;
-      }
-      
-      .mobile-card p {
-        font-size: 14px;
-        color: #6b7280;
-        margin: 0 0 16px 0;
-      }
-      
-      /* 移动端按钮样式 */
-      .mobile-btn {
-        padding: 12px 20px;
-        border-radius: 8px;
-        border: none;
-        font-size: 16px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-      
-      .mobile-btn:active {
-        transform: scale(0.95);
-      }
-      
-      .mobile-btn-primary {
-        background: #4f46e5;
-        color: white;
-      }
-      
-      .mobile-btn-secondary {
-        background: #f3f4f6;
-        color: #374151;
-      }
-      
-      /* 移动端面板切换 */
-      .mobile-panel {
-        display: none;
-        animation: fadeIn 0.3s ease-in-out;
-      }
-      
-      .mobile-panel.active {
-        display: block;
-      }
-      
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      
-      /* 移动端模态框 */
-      .mobile-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2000;
-        padding: 20px;
-      }
-      
-      .mobile-modal-content {
-        background: white;
-        border-radius: 16px;
-        max-width: 100%;
-        max-height: 80vh;
-        overflow-y: auto;
-        width: 100%;
-        padding: 24px;
-      }
-      
-      /* 移动端输入框 */
-      .mobile-input {
-        width: 100%;
-        padding: 12px 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 16px;
-        background: white;
-        color: #1f2937;
-        min-height: 48px;
-        box-sizing: border-box;
-      }
-      
-      /* 移动端文件上传区域 */
-      .mobile-file-upload {
-        border: 2px dashed #d1d5db;
-        border-radius: 12px;
-        padding: 40px 20px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.3s;
-      }
-      
-      .mobile-file-upload:active {
-        border-color: #4f46e5;
-        background: rgba(79, 70, 229, 0.05);
-      }
-      
-      /* 移动端暗色模式 */
-      body.dark .mobile-app-container {
-        background: #111827;
-      }
-      
-      body.dark .mobile-header,
-      body.dark .mobile-bottom-nav {
-        background: #1f2937;
-        border-color: #374151;
-      }
-      
-      body.dark .mobile-header h1 {
-        color: #f9fafb;
-      }
-      
-      body.dark .mobile-header-btn {
-        background: #374151;
-        color: #d1d5db;
-      }
-      
-      body.dark .mobile-card {
-        background: #1f2937;
-        border-color: #374151;
-      }
-      
-      body.dark .mobile-card h3 {
-        color: #f9fafb;
-      }
-      
-      body.dark .mobile-card p {
-        color: #d1d5db;
-      }
-      
-      body.dark .mobile-nav-item {
-        color: #9ca3af;
-      }
-      
-      body.dark .mobile-nav-item.active {
-        color: #818cf8;
-      }
-      
-      body.dark .mobile-btn-secondary {
-        background: #374151;
-        color: #f9fafb;
-      }
-      
-      body.dark .mobile-input {
-        background: #374151;
-        border-color: #4b5563;
-        color: #f9fafb;
-      }
-      
-      /* 小屏幕优化 */
-      @media (max-width: 375px) {
-        .mobile-card {
-          margin: 8px;
-          padding: 12px;
-        }
-        
-        .mobile-card h3 {
-          font-size: 14px;
-        }
-        
-        .mobile-card p {
-          font-size: 12px;
-        }
-        
-        .mobile-btn {
-          font-size: 14px;
-          padding: 10px 16px;
-        }
-      }
+      toast.textContent = message;
+      toast.style.opacity = '1';
+      clearTimeout(toast.timeoutId);
+      toast.timeoutId = setTimeout(() => {
+        toast.style.opacity = '0';
+      }, duration);
     }
-    
-    /* 平板设备适配 */
-    @media (min-width: 769px) and (max-width: 1024px) {
-      .mobile-app-container {
-        max-width: 1024px;
-        margin: 0 auto;
-      }
-      
-      .mobile-main-content {
-        padding-left: 20px;
-        padding-right: 20px;
-      }
-    }
-  </style>
-  
-  <!-- 移动端布局结构 -->
-  <div class="mobile-app-container" style="display: none;">
-    <!-- 移动端顶部导航 -->
-    <div class="mobile-header">
-      <h1>题境</h1>
-      <div class="mobile-header-actions">
-        <button class="mobile-header-btn" onclick="toggleMobileTheme()">
-          <i class="fas fa-moon" id="mobile-theme-icon"></i>
-        </button>
-        <button class="mobile-header-btn" onclick="showMobileSettings()">
-          <i class="fas fa-cog"></i>
-        </button>
-      </div>
-    </div>
-    
-    <!-- 移动端主内容区域 -->
-    <div class="mobile-main-content" id="mobile-main-content">
-      <!-- 题库面板 -->
-      <div class="mobile-panel active" id="mobile-panel-library">
-        <div class="mobile-card">
-          <h3><i class="fas fa-folder-open"></i> 题库管理</h3>
-          <p>管理您的题库，支持Excel导入导出，随时随地学习和练习</p>
-          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <button class="mobile-btn mobile-btn-primary" onclick="showMobileLibrary()">
-              <i class="fas fa-book"></i> 我的题库
-            </button>
-            <button class="mobile-btn mobile-btn-secondary" onclick="showMobileImport()">
-              <i class="fas fa-file-import"></i> 导入题库
-            </button>
-          </div>
-        </div>
-        
-        <div class="mobile-card">
-          <h3><i class="fas fa-play-circle"></i> 开始练习</h3>
-          <p>选择题库开始练习，支持随机练习、顺序练习等多种模式</p>
-          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <button class="mobile-btn mobile-btn-primary" onclick="startMobilePractice()">
-              <i class="fas fa-random"></i> 随机练习
-            </button>
-            <button class="mobile-btn mobile-btn-secondary" onclick="startMobileSequentialPractice()">
-              <i class="fas fa-list-ol"></i> 顺序练习
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 练习面板 -->
-      <div class="mobile-panel" id="mobile-panel-practice">
-        <div class="mobile-card">
-          <h3>练习模式</h3>
-          <p>请先导入题库开始练习</p>
-          <button class="mobile-btn mobile-btn-primary" onclick="showMobileImport()">
-            <i class="fas fa-file-import"></i> 导入题库
-          </button>
-        </div>
-      </div>
-      
-      <!-- 错题面板 -->
-      <div class="mobile-panel" id="mobile-panel-wrong">
-        <div class="mobile-card">
-          <h3><i class="fas fa-times-circle"></i> 错题本</h3>
-          <p>查看和管理您的错题，针对性复习，提高学习效率</p>
-          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <button class="mobile-btn mobile-btn-primary" onclick="showMobileWrongBook()">
-              <i class="fas fa-eye"></i> 查看错题
-            </button>
-            <button class="mobile-btn mobile-btn-secondary" onclick="clearMobileWrongBook()">
-              <i class="fas fa-trash"></i> 清空错题
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 统计面板 -->
-      <div class="mobile-panel" id="mobile-panel-stats">
-        <div class="mobile-card">
-          <h3><i class="fas fa-chart-bar"></i> 学习统计</h3>
-          <p>查看您的学习进度和统计数据，了解学习情况</p>
-          <button class="mobile-btn mobile-btn-primary" onclick="showMobileStatistics()">
-            <i class="fas fa-chart-line"></i> 查看统计
-          </button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 移动端底部导航 -->
-    <div class="mobile-bottom-nav">
-      <button class="mobile-nav-item active" onclick="switchMobilePanel('library')">
-        <i class="fas fa-folder-open"></i>
-        <span>题库</span>
-      </button>
-      <button class="mobile-nav-item" onclick="switchMobilePanel('practice')">
-        <i class="fas fa-play"></i>
-        <span>练习</span>
-      </button>
-      <button class="mobile-nav-item" onclick="switchMobilePanel('wrong')">
-        <i class="fas fa-times-circle"></i>
-        <span>错题</span>
-      </button>
-      <button class="mobile-nav-item" onclick="switchMobilePanel('stats')">
-        <i class="fas fa-chart-bar"></i>
-        <span>统计</span>
-      </button>
-    </div>
-  </div>
-  
-  <!-- 移动端导入模态框 -->
-  <div class="mobile-modal" id="mobile-import-modal" style="display: none;">
-    <div class="mobile-modal-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="margin: 0; font-size: 18px; font-weight: 600;">导入题库</h3>
-        <button class="mobile-header-btn" onclick="closeMobileImportModal()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="mobile-file-upload" onclick="document.getElementById('mobile-file-input').click()">
-        <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #9ca3af; margin-bottom: 16px;"></i>
-        <p style="font-size: 16px; color: #6b7280; margin: 0 0 8px 0;">点击选择Excel文件</p>
-        <small style="font-size: 14px; color: #9ca3af;">支持 .xlsx, .xls, .csv 格式</small>
-      </div>
-      <input type="file" id="mobile-file-input" accept=".xlsx,.xls,.csv" style="display: none;" onchange="handleMobileFileImport(event)">
-    </div>
-  </div>
-  
-  <script>
-    // 移动端设备检测和布局管理
-    class MobileLayoutManager {
-      constructor() {
-        this.isMobile = this.detectMobile();
-        this.isTablet = this.detectTablet();
-        this.isInitialized = false;
-        
-        this.init();
-      }
-      
-      detectMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-               window.innerWidth < 768;
-      }
-      
-      detectTablet() {
-        return /iPad|Android(?!.*Mobile)/i.test(navigator.userAgent) || 
-               (window.innerWidth >= 768 && window.innerWidth <= 1024);
-      }
-      
-      init() {
-        if (this.isMobile || this.isTablet) {
-          this.setupMobileLayout();
-          this.isInitialized = true;
-          console.log('移动端布局已激活 - 设备类型:', this.isTablet ? '平板' : '手机');
-        }
-      }
-      
-      setupMobileLayout() {
-        // 隐藏桌面端内容
-        const desktopContainer = document.querySelector('.desktop-container');
-        if (desktopContainer) {
-          desktopContainer.style.display = 'none';
-        }
-        
-        // 显示移动端容器
-        const mobileContainer = document.querySelector('.mobile-app-container');
-        if (mobileContainer) {
-          mobileContainer.style.display = 'flex';
-        }
-        
-        // 初始化移动端功能
-        this.setupMobileEventListeners();
-        this.loadMobileData();
-      }
-      
-      setupMobileEventListeners() {
-        // 监听窗口大小变化
-        window.addEventListener('resize', () => {
-          this.handleResize();
-        });
-        
-        // 监听设备方向变化
-        window.addEventListener('orientationchange', () => {
-          this.handleOrientationChange();
-        });
-      }
-      
-      handleResize() {
-        const newIsMobile = this.detectMobile();
-        const newIsTablet = this.detectTablet();
-        
-        if (newIsMobile !== this.isMobile || newIsTablet !== this.isTablet) {
-          this.isMobile = newIsMobile;
-          this.isTablet = newIsTablet;
-          this.init();
-        }
-      }
-      
-      handleOrientationChange() {
-        setTimeout(() => {
-          // 处理方向变化后的布局调整
-          console.log('设备方向已改变');
-        }, 100);
-      }
-      
-      loadMobileData() {
-        // 从localStorage加载数据
-        this.questionLibrary = JSON.parse(localStorage.getItem('questionLibrary') || '[]');
-        this.wrongBook = JSON.parse(localStorage.getItem('wrongBook') || '[]');
-        this.favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-      }
-      
-      saveMobileData() {
-        localStorage.setItem('questionLibrary', JSON.stringify(this.questionLibrary));
-        localStorage.setItem('wrongBook', JSON.stringify(this.wrongBook));
-        localStorage.setItem('favorites', JSON.stringify(this.favorites));
-      }
-    }
-    
-    // 创建全局布局管理器
-    window.mobileLayoutManager = new MobileLayoutManager();
-    
-    // 移动端全局函数
-    function switchMobilePanel(panelName) {
-      // 更新导航状态
-      document.querySelectorAll('.mobile-nav-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.textContent.includes(getPanelName(panelName))) {
-          item.classList.add('active');
-        }
-      });
-      
-      // 切换面板
-      document.querySelectorAll('.mobile-panel').forEach(panel => {
-        panel.classList.remove('active');
-      });
-      
-      const targetPanel = document.getElementById(`mobile-panel-${panelName}`);
-      if (targetPanel) {
-        targetPanel.classList.add('active');
-      }
-    }
-    
-    function getPanelName(panel) {
-      const names = {
-        'library': '题库',
-        'practice': '练习',
-        'wrong': '错题',
-        'stats': '统计'
-      };
-      return names[panel] || panel;
-    }
-    
-    function toggleMobileTheme() {
-      document.body.classList.toggle('dark');
-      const isDark = document.body.classList.contains('dark');
-      const icon = document.getElementById('mobile-theme-icon');
-      if (icon) {
-        icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-      }
-      localStorage.setItem('darkMode', isDark);
-    }
-    
-    function showMobileSettings() {
-      alert('设置功能开发中...');
-    }
-    
-    function showMobileLibrary() {
-      alert('题库功能开发中...');
-    }
-    
-    function showMobileImport() {
-      document.getElementById('mobile-import-modal').style.display = 'flex';
-    }
-    
-    function closeMobileImportModal() {
-      document.getElementById('mobile-import-modal').style.display = 'none';
-    }
-    
-    function startMobilePractice() {
-      alert('练习功能开发中...');
-    }
-    
-    function startMobileSequentialPractice() {
-      alert('顺序练习功能开发中...');
-    }
-    
-    function showMobileWrongBook() {
-      alert('错题本功能开发中...');
-    }
-    
-    function clearMobileWrongBook() {
-      if (confirm('确定要清空错题本吗？')) {
-        window.mobileLayoutManager.wrongBook = [];
-        window.mobileLayoutManager.saveMobileData();
-        alert('错题本已清空');
-      }
-    }
-    
-    function showMobileStatistics() {
-      alert('统计功能开发中...');
-    }
-    
-    function handleMobileFileImport(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          // 模拟添加题库
-          const newLibrary = {
-            name: file.name.replace(/\.[^/.]+$/, ""),
-            created: new Date().toISOString(),
-            count: Math.floor(Math.random() * 100) + 10,
-            file: file.name
-          };
-          
-          window.mobileLayoutManager.questionLibrary.push(newLibrary);
-          window.mobileLayoutManager.saveMobileData();
-          
-          alert(`题库 "${newLibrary.name}" 导入成功！`);
-          closeMobileImportModal();
-          
-        } catch (error) {
-          alert('文件导入失败：' + error.message);
-        }
-      };
-      
-      reader.readAsArrayBuffer(file);
-    }
-    
-    // 初始化主题
-    document.addEventListener('DOMContentLoaded', () => {
-      const savedTheme = localStorage.getItem('darkMode');
-      if (savedTheme === 'true') {
-        document.body.classList.add('dark');
-        const icon = document.getElementById('mobile-theme-icon');
-        if (icon) {
-          icon.className = 'fas fa-sun';
-        }
-      }
-    });
   </script>
 </body>
-</html>
+</html> 
